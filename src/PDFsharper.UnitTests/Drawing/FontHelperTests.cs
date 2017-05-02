@@ -176,9 +176,10 @@ namespace PDFsharper.UnitTests.Drawing
 
             double width = Math.Round(size.Width, 3);
             double height = Math.Round(size.Height, 3);
-            Assert.IsTrue(width == 33.72, "size.Width is not correct.  Expected 33.72 but Got {0}", width);
-            Assert.IsTrue(height == 12, "size.Height is not correct.  Expected 12 but Got {0}", height);
+            Assert.IsTrue(width == 14.33, "size.Width is not correct.  Expected 14.33 but Got {0}", width);
+            Assert.IsTrue(height == 13.14, "size.Height is not correct.  Expected 13.14 but Got {0}", height);
         }
+
 
         [TestMethod]
         public void MeasureString_TimesRoman()
@@ -283,7 +284,7 @@ namespace PDFsharper.UnitTests.Drawing
             Assert.IsTrue(size.Width == 0, "Width should be 0");
             Assert.IsTrue(size.Height == 0, "Height should be 0");
         }
-        
+
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException), "Test fails because ArgumentNullException was not thrown.")]
         public void MeasureString_Text_Null()
