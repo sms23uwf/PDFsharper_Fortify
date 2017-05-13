@@ -28,14 +28,21 @@ namespace PdfSharper.Fonts.AFM
         private static Dictionary<string, string[]> _fieldFontNameMap = new Dictionary<string, string[]>()
         {
             //courier family
-            { "Courier", new string[] { COURIER, COURIERBOLD, COURIEROBLIQUE, COURIERBOLDOBLIQUE } },
+			{ "Courier", new string[] { COURIER, COURIERBOLD, COURIEROBLIQUE, COURIERBOLDOBLIQUE } },
+            { "Courier New", new string[] { COURIER, COURIERBOLD, COURIEROBLIQUE, COURIERBOLDOBLIQUE } },
             { "CourierStd", new string[] { COURIER, COURIERBOLD, COURIEROBLIQUE, COURIERBOLDOBLIQUE } },
             { "Cour", new string[] { COURIER, COURIERBOLD, COURIEROBLIQUE, COURIERBOLDOBLIQUE } },
+            { "CoOb", new string[] { COURIEROBLIQUE, COURIEROBLIQUE, COURIEROBLIQUE, COURIEROBLIQUE } },
+            { "CoBo", new string[] { COURIERBOLD, COURIERBOLD, COURIERBOLD, COURIERBOLD } },
+            { "CoBO", new string[] { COURIERBOLDOBLIQUE, COURIERBOLDOBLIQUE, COURIERBOLDOBLIQUE, COURIERBOLDOBLIQUE } },
 
 
             //Helvetica family
             { "Helvetica", new string[] { HELVETICA, HELVETICABOLD, HELVETICAOBLIQUE, HELVETICABOLDOBLIQUE} },
             { "Helv", new string[] { HELVETICA, HELVETICABOLD, HELVETICAOBLIQUE, HELVETICABOLDOBLIQUE} },
+            { "HeBo", new string[] { HELVETICABOLD, HELVETICABOLD, HELVETICABOLD, HELVETICABOLD } },
+            { "HeOb", new string[] { HELVETICAOBLIQUE, HELVETICAOBLIQUE, HELVETICAOBLIQUE, HELVETICAOBLIQUE } },
+            { "HeBO", new string[] { HELVETICABOLDOBLIQUE, HELVETICABOLDOBLIQUE, HELVETICABOLDOBLIQUE, HELVETICABOLDOBLIQUE } },
             { "Arial", new string[] { HELVETICA, HELVETICABOLD, HELVETICAOBLIQUE, HELVETICABOLDOBLIQUE} },
             { "ArialMT", new string[] { HELVETICA, HELVETICABOLD, HELVETICAOBLIQUE, HELVETICABOLDOBLIQUE} },
             
@@ -46,6 +53,9 @@ namespace PdfSharper.Fonts.AFM
             { "Times-Roman", new string[] { TIMESROMAN, TIMESBOLD, TIMESITALIC, TIMESBOLDITALIC} },
             { "Times", new string[] { TIMESROMAN, TIMESBOLD, TIMESITALIC, TIMESBOLDITALIC} },
             { "TiRo", new string[] { TIMESROMAN, TIMESBOLD, TIMESITALIC, TIMESBOLDITALIC} },
+            { "TiBo", new string[] { TIMESBOLD, TIMESBOLD, TIMESBOLD, TIMESBOLD } },
+            { "TiIt", new string[] { TIMESITALIC, TIMESITALIC, TIMESITALIC, TIMESITALIC } },
+            { "TiBI", new string[] { TIMESBOLDITALIC, TIMESBOLDITALIC, TIMESBOLDITALIC, TIMESBOLDITALIC } },
 
 
             //Times New Roman Family

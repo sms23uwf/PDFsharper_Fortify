@@ -57,13 +57,16 @@ using Windows.UI.Xaml.Media;
 using PdfSharper.Fonts;
 using PdfSharper.Fonts.OpenType;
 using PdfSharper.Fonts.AFM;
+using PdfSharper.Pdf;
+using PdfSharper.Pdf.Advanced;
+using System.Linq;
 
 namespace PdfSharper.Drawing
 {
     /// <summary>
     /// Bunch of functions that do not have a better place.
     /// </summary>
-    static class FontHelper
+    public static class FontHelper
     {
         /// <summary>
         /// Measure string directly from font data.
@@ -74,11 +77,11 @@ namespace PdfSharper.Drawing
                 throw new ArgumentNullException("text");
             if (font == null)
                 throw new ArgumentNullException("font");
-            
+
             XSize size = new XSize();
             if (!string.IsNullOrEmpty(text))
             {
-                AFMDetails afmDetails = AFMCache.Instance.GetFontMetricsByNameAndAttributes(font.FamilyName, font.Bold, font.Italic);
+                AFMDetails afmDetails = AFMCache.Instance.GetFontMetricsByNameAndAttributes(font.ContentFontName, font.Bold, font.Italic);
                 if (afmDetails != null)
                 {
                     size = GetSizeByAFM(text, font, afmDetails);
@@ -86,13 +89,13 @@ namespace PdfSharper.Drawing
                 else
                 {
                     OpenTypeDescriptor descriptor = FontDescriptorCache.GetOrCreateDescriptorFor(font) as OpenTypeDescriptor;
-                    if(descriptor != null)
+                    if (descriptor != null)
                     {
                         size = GetSizeByOpenTypeDescriptor(text, font, descriptor);
                     }
                 }
             }
-            
+
             return size;
         }
 
@@ -156,14 +159,14 @@ namespace PdfSharper.Drawing
                 // Height is the sum of ascender and descender.
                 int width = 0;
                 int height = afmDetails.Ascender + afmDetails.Descender;
-                
+
                 for (int idx = 0; idx < text.Length; idx++)
                 {
                     int characterWidth = 0;
                     afmDetails.CharacterWidths.TryGetValue(text[idx], out characterWidth);
                     width += characterWidth;
                 }
-                
+
                 if (width > 0)
                 {
                     size.Width = width * font.Size * .001F;
@@ -173,7 +176,7 @@ namespace PdfSharper.Drawing
                     size.Width = 250 * font.Size * .001F;
                 }
 
-                if(height > 0)
+                if (height > 0)
                 {
                     size.Height = (afmDetails.BBoxURY - afmDetails.BBoxLLY) * font.Size * .001f;
                 }
@@ -199,7 +202,7 @@ namespace PdfSharper.Drawing
         }
 
 #if CORE || GDI
-        public static GdiFont CreateFont(string familyName, double emSize, GdiFontStyle style, out XFontSource fontSource)
+        internal static GdiFont CreateFont(string familyName, double emSize, GdiFontStyle style, out XFontSource fontSource)
         {
             fontSource = null;
             // ReSharper disable once JoinDeclarationAndInitializer
@@ -330,7 +333,7 @@ namespace PdfSharper.Drawing
         /// <summary>
         /// Determines whether the style is available as a glyph type face in the specified font family, i.e. the specified style is not simulated.
         /// </summary>
-        public static bool IsStyleAvailable(XFontFamily family, XGdiFontStyle style)
+        internal static bool IsStyleAvailable(XFontFamily family, XGdiFontStyle style)
         {
             style &= XGdiFontStyle.BoldItalic;
 #if !SILVERLIGHT
@@ -424,6 +427,126 @@ namespace PdfSharper.Drawing
         public static XFontStyle CreateStyle(bool isBold, bool isItalic)
         {
             return (isBold ? XFontStyle.Bold : 0) | (isItalic ? XFontStyle.Italic : 0);
+        }
+
+        internal static PdfFont GetFontFromResources(PdfDictionary resourceOwner, string resourceKey, XFont xFont)
+        {
+            var defaultFormResources = resourceOwner.Elements.GetDictionary(resourceKey);
+            if (defaultFormResources != null && defaultFormResources.Elements.ContainsKey(PdfResources.Keys.Font))
+            {
+                var fontList = defaultFormResources.Elements.GetDictionary(PdfResources.Keys.Font);
+
+                var font = GetFontResourceItem(xFont.ContentFontName, defaultFormResources);
+
+                PdfItem value = font.Value;
+
+                if (value is PdfReference)
+                {
+                    value = ((PdfReference)value).Value;
+                }
+
+                PdfFont systemFont = new PdfFont(value as PdfDictionary);
+                if (systemFont.FontEncoding == PdfFontEncoding.Unicode)
+                {
+                    OpenTypeDescriptor ttDescriptor = (OpenTypeDescriptor)FontDescriptorCache.GetOrCreateDescriptorFor(xFont);
+                    systemFont.FontDescriptor = new PdfFontDescriptor(resourceOwner.Owner, ttDescriptor);
+                }
+
+                return systemFont;
+            }
+
+            return null;
+        }
+
+        internal static KeyValuePair<string, PdfItem> GetFontResourceItem(string contentFontName, PdfDictionary defaultFormResources)
+        {
+            contentFontName = contentFontName.TrimStart('/');
+            var fontList = defaultFormResources.Elements.GetDictionary(PdfResources.Keys.Font);
+
+            var font = fontList.Elements.FirstOrDefault(e => e.Key.TrimStart('/') == contentFontName);
+
+            return font;
+        }
+
+        public static string MapFamilyNameToSystemFontName(string familyName, bool isBold, bool isItalic)
+        {
+            switch (familyName)
+            {
+                case "Arial":
+                    return "ArialMT";
+                case "ArialBoldItalic":
+                    return "Arial-BoldItalicMT";
+                case "ArialItalic":
+                    return "Arial-ItalicMT";
+                case "ArialBold":
+                    return "Arial-BoldMT";
+                case "Courier":
+                case "Courier New":
+                    if (!isBold && !isItalic)
+                        return "Cour";
+                    else if (isBold && !isItalic)
+                        return "CoBo";
+                    else if (isItalic && !isBold)
+                    {
+                        return "CoOb";
+                    }
+                    return "CoBO";
+                case "Courier-Oblique":
+                    return "CoOb";
+                case "Courier-Bold":
+                    return "CoBo";
+                case "Courier-BoldOblique":
+                    return "CoBO";
+                case "Helvetica":
+                    if (!isBold && !isItalic)
+                        return "Helv";
+                    else if (isBold && !isItalic)
+                        return "HeBo";
+                    else if (isItalic && !isBold)
+                    {
+                        return "HeOb";
+                    }
+                    return "HeBO";
+                case "Helvetica-Oblique":
+                    return "HeOb";
+                case "Helvetica-Bold":
+                    return "HeBo";
+                case "Helvetica-BoldOblique":
+                    return "HeBO";
+                case "Times-Roman":
+                case "Times":
+                    if (!isBold && !isItalic)
+                        return "TiRo";
+                    else if (isBold && !isItalic)
+                        return "TiBo";
+                    else if (isItalic && !isBold)
+                    {
+                        return "TiIt";
+                    }
+                    return "TiBI";
+                case "Times-Italic":
+                    return "TiIt";
+                case "Times-Bold":
+                    return "TiBo";
+                case "Times-BoldItalic":
+                    return "TiBI";
+                case "Times New Roman":
+                    return "TimesNewRomanPSMT";
+                case "Symbol":
+                    return "Symb";
+                case "ZapfDingbats":
+                    return "ZaDb";
+                default:
+                    return familyName;
+            }
+        }
+
+
+        public static string MapFontFamilyNameToPlatformFont(string familyName)
+        {
+            string[] split = familyName.Split('-');
+
+            return split[0];
         }
     }
 }

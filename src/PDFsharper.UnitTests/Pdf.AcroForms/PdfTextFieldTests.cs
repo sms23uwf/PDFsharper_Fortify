@@ -8,7 +8,7 @@ using PdfSharper.Pdf.Annotations;
 namespace PDFsharper.UnitTests.Pdf.AcroForms
 {
     [TestClass]
-    public class PdfTextFieldTests
+    public class PdfTextFieldTests 
     {
         [TestMethod]
         public void RenderAppearance()
@@ -123,7 +123,7 @@ namespace PDFsharper.UnitTests.Pdf.AcroForms
         public void Flatten()
         {
             string fieldValue = "Test";
-            string targetStreamValue = "q\n1.0 0.0 0.0 1.0 0.0 0.0 cm\n1 w\n0 J\n0 j\n[]0 d\n1 1 1 RG\n/GS0 gs\n0 0 200 20 re\nS\nq\n/Tx BMC\nBT\n/" + PdfAcroFieldTestHelpers.FONT_NAME + " 10 Tf\n0 g\n2 6.3644 Td\n(" + fieldValue + ")Tj\nET\nEMC\nQ\nQ\n";
+            string targetStreamValue = "q\n1.0 0.0 0.0 1.0 0.0 0.0 cm\n1 w\n0 J\n0 j\n[]0 d\n1 1 1 RG\n/GS0 gs\n0 0 200 20 re\nS\nq\n/Tx BMC\nBT\n/" + PdfAcroFieldTestHelpers.FONT_NAME + " 10 Tf\n0 g\n2 6.6793 Td\n(" + fieldValue + ")Tj\nET\nEMC\nQ\nQ\n";
 
             PdfDocument document = PdfAcroFieldTestHelpers.SetupDocumentForTest();
             PdfTextField field1 = PdfAcroFieldTestHelpers.CreateTextFieldForTest(document);
@@ -140,7 +140,7 @@ namespace PDFsharper.UnitTests.Pdf.AcroForms
             field1.Flatten();
 
             Assert.IsTrue(field1.Elements.ContainsKey(PdfAnnotation.Keys.AP), "field1 should have rendered an appearance stream.");
-            
+
             Assert.IsNotNull(document, "document should not be null");
             Assert.IsNotNull(document.Pages, "document Pages should not be null");
             Assert.IsTrue(document.Pages.Count == 1, "document Pages count is not correct");
@@ -162,7 +162,7 @@ namespace PDFsharper.UnitTests.Pdf.AcroForms
         public void Flatten_TextAndNewLines()
         {
             string fieldValue = "Test \n Test";
-            string targetStreamValue = "q\n1.0 0.0 0.0 1.0 0.0 0.0 cm\n1 w\n0 J\n0 j\n[]0 d\n1 1 1 RG\n/GS0 gs\n0 0 200 20 re\nS\nq\n/Tx BMC\nBT\n/" + PdfAcroFieldTestHelpers.FONT_NAME + " 10 Tf\n0 g\n2 12.1444 Td\n(Test )Tj\n0 -11.56 Td\n( )Tj\n2.78 0 Td\n(Test)Tj\nET\nEMC\nQ\nQ\n";
+            string targetStreamValue = "q\n1.0 0.0 0.0 1.0 0.0 0.0 cm\n1 w\n0 J\n0 j\n[]0 d\n1 1 1 RG\n/GS0 gs\n0 0 200 20 re\nS\nq\n/Tx BMC\nBT\n/" + PdfAcroFieldTestHelpers.FONT_NAME + " 10 Tf\n0 g\n2 12.4593 Td\n(Test )Tj\n0 -11.56 Td\n( )Tj\n2.78 0 Td\n(Test)Tj\nET\nEMC\nQ\nQ\n";
 
             PdfDocument document = PdfAcroFieldTestHelpers.SetupDocumentForTest();
             PdfTextField field1 = PdfAcroFieldTestHelpers.CreateTextFieldForTest(document);
@@ -201,7 +201,7 @@ namespace PDFsharper.UnitTests.Pdf.AcroForms
         public void Flatten_TextAndWhiteSpace()
         {
             string fieldValue = "Test 1 2 3 4";
-            string targetStreamValue = "q\n1.0 0.0 0.0 1.0 0.0 0.0 cm\n1 w\n0 J\n0 j\n[]0 d\n1 1 1 RG\n/GS0 gs\n0 0 200 20 re\nS\nq\n/Tx BMC\nBT\n/" + PdfAcroFieldTestHelpers.FONT_NAME + " 10 Tf\n0 g\n2 6.3644 Td\n(Test )Tj\n22.23 0 Td\n(1 )Tj\n8.34 0 Td\n(2 )Tj\n8.34 0 Td\n(3 )Tj\n8.34 0 Td\n(4)Tj\nET\nEMC\nQ\nQ\n";
+            string targetStreamValue = "q\n1.0 0.0 0.0 1.0 0.0 0.0 cm\n1 w\n0 J\n0 j\n[]0 d\n1 1 1 RG\n/GS0 gs\n0 0 200 20 re\nS\nq\n/Tx BMC\nBT\n/" + PdfAcroFieldTestHelpers.FONT_NAME + " 10 Tf\n0 g\n2 6.6793 Td\n(Test )Tj\n22.23 0 Td\n(1 )Tj\n8.34 0 Td\n(2 )Tj\n8.34 0 Td\n(3 )Tj\n8.34 0 Td\n(4)Tj\nET\nEMC\nQ\nQ\n";
 
             PdfDocument document = PdfAcroFieldTestHelpers.SetupDocumentForTest();
             PdfTextField field1 = PdfAcroFieldTestHelpers.CreateTextFieldForTest(document);
@@ -415,7 +415,7 @@ namespace PDFsharper.UnitTests.Pdf.AcroForms
             Assert.IsTrue(field.RightMargin == 0, "RightMargin should be 0");
 
             field.MultiLine = true;
-            
+
             Assert.IsTrue(field.TopMargin == 4, "TopMargin should be 4");
             Assert.IsTrue(field.BottomMargin == 4, "BottomMargin should be 4");
             Assert.IsTrue(field.LeftMargin == 2, "LeftMargin should be 2");
@@ -439,7 +439,7 @@ namespace PDFsharper.UnitTests.Pdf.AcroForms
             Assert.IsTrue(field.RightMargin == 0, "RightMargin should be 0");
 
             field.MultiLine = false;
-            
+
             Assert.IsTrue(field.TopMargin == 0, "TopMargin should be 0");
             Assert.IsTrue(field.BottomMargin == 0, "BottomMargin should be 0");
             Assert.IsTrue(field.LeftMargin == 2, "LeftMargin should be 2");
@@ -455,7 +455,7 @@ namespace PDFsharper.UnitTests.Pdf.AcroForms
             Assert.IsTrue(field.Text == string.Empty, "Text should be \"\"");
             Assert.IsTrue(field.Elements.GetString(PdfTextField.Keys.V) == string.Empty, "field elements should contain Value Key with Value of string.empty");
 
-            field.Text  = "Test";
+            field.Text = "Test";
 
             Assert.IsTrue(field.Text == "Test", "Text should be \"Test\"");
             Assert.IsTrue(field.Elements.GetString(PdfTextField.Keys.V) == "Test", "field elements should contain Value Key with Value of Test");

@@ -67,10 +67,13 @@ namespace PdfSharper.Pdf.AcroForms
                 if (string.IsNullOrEmpty(fontResourceItem.Key))
                 {
                     fontResourceItem = XForm.GetFontResourceItem("Helvetica", defaultFormResources);
+                    font = new XFont("Helvetica", 10);
                 }
+                else
+                    font = new XFont("Arial", 10);
 
                 Debug.Assert(!string.IsNullOrEmpty(fontResourceItem.Key), "Unable to find a default font");
-                font = new XFont(fontResourceItem.Key.TrimStart('/'), 10);
+
             }
         }
 
@@ -764,18 +767,18 @@ namespace PdfSharper.Pdf.AcroForms
                         fontDict.Elements.SetReference(fontKey, fontRef);
                     }
                 }
-                
+
                 Page.Annotations.Remove(this);
 
                 RemoveJavascript();
             }
 
-            foreach(var field in Fields)
+            foreach (var field in Fields)
             {
                 field.Flatten();
             }
 
-            _document.Internals.RemoveObject(this);            
+            _document.Internals.RemoveObject(this);
         }
 
         /// <summary>
@@ -799,7 +802,7 @@ namespace PdfSharper.Pdf.AcroForms
             var content = ContentReader.ReadContent(stream.UnfilteredValue);
 
             XMatrix matrix;
-            if(Page.Orientation == PageOrientation.Landscape)
+            if (Page.Orientation == PageOrientation.Landscape)
             {
                 matrix = new XMatrix(0, 1, -1, 0, rect.X2, rect.Y1);
             }
@@ -827,7 +830,8 @@ namespace PdfSharper.Pdf.AcroForms
                 appendedContent.CreateStream(ms.ToArray());
             }
         }
-        
+
+
         /// <summary>Attempts to determine which type of field a PdfDictionary represents</summary>
         /// <param name="dict"></param>
         /// <returns></returns>
@@ -891,6 +895,63 @@ namespace PdfSharper.Pdf.AcroForms
             bool isVisible = !hasInvisible && !hasHidden && !hasNoView;
 
             return isVisible;
+        }
+
+        /// <summary>
+        /// Explicitly overrides the appearance stream (/AP) for this field from the specified <paramref name="form"/>
+        /// </summary>
+        /// <param name="form">Form that an appearance stream has been written to.</param>
+        public virtual void AssignAppearanceStream(XForm form)
+        {
+            form.PdfForm.Elements.Add("/FormType", new PdfLiteral("1"));
+
+            // Get existing or create new appearance dictionary.
+            PdfDictionary ap = Elements[PdfAnnotation.Keys.AP] as PdfDictionary;
+            if (ap == null)
+            {
+                ap = new PdfDictionary(_document);
+                ap.IsCompact = IsCompact;
+                Elements[PdfAnnotation.Keys.AP] = ap;
+            }
+
+            PdfReference normalStateAppearanceReference = ap.Elements.GetReference("/N");
+            if (normalStateAppearanceReference == null || _document._trailers.Count > 1) //incremental update mode, must create a new stream
+            {
+                // Set XRef to normal state
+                ap.Elements["/N"] = form.PdfForm;
+            }
+
+            var normalStateDict = ap.Elements.GetDictionary("/N");
+            var resourceDict = new PdfDictionary(Owner);
+            resourceDict.IsCompact = IsCompact;
+            resourceDict.Elements[PdfResources.Keys.ProcSet] = new PdfArray(Owner, new PdfName("/PDF"), new PdfName("/Text"));
+
+            var defaultFormResources = Owner.AcroForm.Elements.GetDictionary(PdfAcroForm.Keys.DR);
+            if (defaultFormResources != null && defaultFormResources.Elements.ContainsKey(PdfResources.Keys.Font))
+            {
+                var fontResourceItem = XForm.GetFontResourceItem(Font.FamilyName, defaultFormResources);
+                PdfDictionary fontDict = new PdfDictionary(Owner);
+                fontDict.IsCompact = IsCompact;
+                resourceDict.Elements[PdfResources.Keys.Font] = fontDict;
+                fontDict.Elements[fontResourceItem.Key] = fontResourceItem.Value;
+            }
+
+            normalStateDict.Elements.SetObject(PdfPage.Keys.Resources, resourceDict);
+
+            PdfFormXObject xobj = form.PdfForm;
+            if (xobj.Stream == null)
+                xobj.CreateStream(new byte[] { });
+
+            string s = xobj.Stream.ToString();
+            if (!string.IsNullOrEmpty(s))
+            {
+                normalStateDict.Elements.Remove("/Filter");
+                normalStateDict.Stream.Value = new RawEncoding().GetBytes(s);
+            }
+            else
+            {
+                Elements.Remove(PdfAnnotation.Keys.AP);
+            }
         }
 
         /// <summary>

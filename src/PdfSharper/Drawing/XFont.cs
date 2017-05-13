@@ -372,6 +372,7 @@ namespace PdfSharper.Drawing
             //  Typeface = FontHelper.CreateTypeface(Family, _style);
 #endif
             CreateDescriptorAndInitializeFontMetrics();
+            ContentFontName = FontHelper.MapFamilyNameToSystemFontName(_familyName, Bold, Italic);
         }
 
 #if CORE || GDI
@@ -492,6 +493,13 @@ namespace PdfSharper.Drawing
         {
             get { return _glyphTypeface.FontFamily; }
         }
+
+
+        /// <summary>
+        /// This is the adobe shortcut name for standard fonts
+        /// e.g. "Helv", "Cour", "HeBo"
+        /// </summary>
+        public string ContentFontName { get; private set; }
 
         /// <summary>
         /// WRONG: Gets the face name of this Font object.
@@ -749,7 +757,7 @@ namespace PdfSharper.Drawing
         OpenTypeDescriptor _descriptor;
 
 
-        internal string FamilyName
+        public string FamilyName
         {
             get { return _familyName; }
         }
@@ -852,7 +860,7 @@ namespace PdfSharper.Drawing
         string DebuggerDisplay
         // ReSharper restore UnusedMember.Local
         {
-            get { return String.Format(CultureInfo.InvariantCulture, "font=('{0}' {1:0.##})", Name, Size); }
+            get { return String.Format(CultureInfo.InvariantCulture, "font=('{0} ({1})' {2:0.##})", ContentFontName, Name, Size); }
         }
     }
 }

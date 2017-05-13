@@ -1393,9 +1393,11 @@ namespace PdfSharper.Drawing.Pdf
                 const byte PathPointTypeLine = 1; // line
                 const byte PathPointTypeBezier = 3; // default Bezier (= cubic Bezier)
                 const byte PathPointTypePathTypeMask = 0x07; // type mask (lowest 3 bits).
+
                 //const byte PathPointTypeDashMode = 0x10; // currently in dash mode.
                 //const byte PathPointTypePathMarker = 0x20; // a marker for the path.
                 const byte PathPointTypeCloseSubpath = 0x80; // closed flag
+
                 // ReSharper restore InconsistentNaming
 
                 byte type = types[idx];
@@ -2031,11 +2033,12 @@ namespace PdfSharper.Drawing.Pdf
         /// <summary>
         /// Gets the resource name of the specified font within this page or form.
         /// </summary>
-        internal string GetFontName(XFont font, out PdfFont pdfFont)
+        internal PdfFont GetFont(XFont font)
         {
             if (_page != null)
-                return _page.GetFontName(font, out pdfFont);
-            return _form.GetFontName(font, out pdfFont);
+                return _page.GetFont(font);
+
+            return _form.GetFont(font);
         }
 
         /// <summary>

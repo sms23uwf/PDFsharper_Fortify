@@ -434,83 +434,27 @@ namespace PdfSharper.Drawing
         /// <summary>
         /// Gets the resource name of the specified font within this form.
         /// </summary>
-        internal string GetFontName(XFont font, out PdfFont pdfFont)
+        internal PdfFont GetFont(XFont font)
         {
             Debug.Assert(IsTemplate, "This function is for form templates only.");
-            string name = GetFontNameFromResources(font.FamilyName, font.Bold, font.Italic);
 
-            if (string.IsNullOrEmpty(name)) //sure go ahead and try your broken embedding
+            PdfFont result = FontHelper.GetFontFromResources(Owner.AcroForm, PdfAcroForm.Keys.DR, font);
+
+            if (result == null) //sure go ahead and try your broken embedding
             {
-                pdfFont = _document.FontTable.GetFont(font);
-                Debug.Assert(pdfFont != null);
-                name = Resources.AddFont(pdfFont);
-            }
-            else
-            {
-                pdfFont = GetFontFromResources(font);
-                Debug.Assert(pdfFont != null);
-            }
-            return name;
-        }
-        private string GetFontNameFromResources(string familyName, bool isBold, bool isItalic)
-        {
-            //TODO: Check that bold an italic are found through just their font names
-            var defaultFormResources = Owner.AcroForm.Elements.GetDictionary(PdfAcroForm.Keys.DR);
-            if (defaultFormResources != null && defaultFormResources.Elements.ContainsKey(PdfResources.Keys.Font))
-            {
-                return GetFontResourceItem(familyName, defaultFormResources).Key;
+                result = _document.FontTable.GetFont(font);
+                Debug.Assert(result != null);
+                Resources.AddFont(result);
             }
 
-            return string.Empty;
+            return result;
         }
-
-        private PdfFont GetFontFromResources(XFont xFont)
-        {
-            //TODO: Check that bold an italic are found through just their font names
-            var defaultFormResources = Owner.AcroForm.Elements.GetDictionary(PdfAcroForm.Keys.DR);
-            if (defaultFormResources != null && defaultFormResources.Elements.ContainsKey(PdfResources.Keys.Font))
-            {
-                var fontList = defaultFormResources.Elements.GetDictionary(PdfResources.Keys.Font);
-
-                var font = GetFontResourceItem(xFont.FamilyName, defaultFormResources);
-
-                PdfItem value = font.Value;
-
-                if (value is PdfReference)
-                {
-                    value = ((PdfReference)value).Value;
-                }
-
-                PdfFont systemFont = new PdfFont(value as PdfDictionary);
-                if (systemFont.FontEncoding == PdfFontEncoding.Unicode)
-                {
-                    OpenTypeDescriptor ttDescriptor = (OpenTypeDescriptor)FontDescriptorCache.GetOrCreateDescriptorFor(xFont);
-                    systemFont.FontDescriptor = new PdfFontDescriptor(Owner, ttDescriptor);
-                }
-
-                return systemFont;
-            }
-
-            return null;
-        }
-
-        internal static KeyValuePair<string, PdfItem> GetFontResourceItem(string familyName, PdfDictionary defaultFormResources)
-        {
-            familyName = familyName.TrimStart('/');
-            var fontList = defaultFormResources.Elements.GetDictionary(PdfResources.Keys.Font);
-
-            var font = fontList.Elements.FirstOrDefault(e => e.Key.TrimStart('/') == familyName ||
-                                                        fontList.Elements.GetDictionary(e.Key).Elements.GetName(PdfFont.Keys.BaseFont).TrimStart('/') ==
-                                                        familyName);
-
-            return font;
-        }
-
-
 
         string IContentStream.GetFontName(XFont font, out PdfFont pdfFont)
         {
-            return GetFontName(font, out pdfFont);
+            pdfFont = GetFont(font);
+
+            return font.Name;
         }
 
         /// <summary>
@@ -525,6 +469,18 @@ namespace PdfSharper.Drawing
             if (pdfFont != null)
                 name = Resources.AddFont(pdfFont);
             return name;
+        }
+
+        internal static KeyValuePair<string, PdfItem> GetFontResourceItem(string familyName, PdfDictionary defaultFormResources)
+        {
+            familyName = familyName.TrimStart('/');
+            var fontList = defaultFormResources.Elements.GetDictionary(PdfResources.Keys.Font);
+
+            var font = fontList.Elements.FirstOrDefault(e => e.Key.TrimStart('/') == familyName ||
+                                                        fontList.Elements.GetDictionary(e.Key).Elements.GetName(PdfFont.Keys.BaseFont).TrimStart('/') ==
+                                                        familyName);
+
+            return font;
         }
 
         /// <summary>

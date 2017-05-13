@@ -377,15 +377,15 @@ namespace PdfSharper.Drawing.Pdf
                 }
             }
 
-            _realizedFont = null;
-            string fontName = _renderer.GetFontName(font, out _realizedFont);
-            if (fontName != _realizedFontName || _realizedFontSize != font.Size)
+            _realizedFont = _renderer.GetFont(font);
+
+            if (font.ContentFontName != _realizedFontName || _realizedFontSize != font.Size)
             {
                 if (_renderer.Gfx.PageDirection == XPageDirection.Downwards)
-                    _renderer.AppendFormatFont("{0} {1:" + format + "} Tf\n", fontName, font.Size);
+                    _renderer.AppendFormatFont("/{0} {1:" + format + "} Tf\n", font.ContentFontName, font.Size);
                 else
-                    _renderer.AppendFormatFont("{0} {1:" + format + "} Tf\n", fontName, font.Size);
-                _realizedFontName = fontName;
+                    _renderer.AppendFormatFont("/{0} {1:" + format + "} Tf\n", font.ContentFontName, font.Size);
+                _realizedFontName = font.ContentFontName;
                 _realizedFontSize = font.Size;
             }
 

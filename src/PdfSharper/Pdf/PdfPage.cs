@@ -35,6 +35,11 @@ using PdfSharper.Pdf.IO;
 using PdfSharper.Drawing;
 using PdfSharper.Pdf.Advanced;
 using PdfSharper.Pdf.Annotations;
+using PdfSharper.Pdf.AcroForms;
+using PdfSharper.Fonts.OpenType;
+using System.Collections.Generic;
+using PdfSharper.Fonts;
+using System.Linq;
 
 namespace PdfSharper.Pdf
 {
@@ -307,7 +312,7 @@ namespace PdfSharper.Pdf
                 {
                     value = value % 360;
                 }
-                
+
                 _elements.SetInteger(InheritablePageKeys.Rotate, value);
             }
         }
@@ -500,17 +505,40 @@ namespace PdfSharper.Pdf
         /// <summary>
         /// Gets the resource name of the specified font within this page.
         /// </summary>
-        internal string GetFontName(XFont font, out PdfFont pdfFont)
+        internal PdfFont GetFont(XFont font)
         {
-            pdfFont = _document.FontTable.GetFont(font);
-            Debug.Assert(pdfFont != null);
-            string name = Resources.AddFont(pdfFont);
-            return name;
+            PdfFont result = FontHelper.GetFontFromResources(this, Keys.Resources, font);
+
+            if (result == null) //sure go ahead and try your broken embedding
+            {
+                result = _document.FontTable.GetFont(font);
+                Debug.Assert(result != null);
+                Resources.AddFont(result);
+            }
+
+            return result;
         }
+
+
+
+        public static KeyValuePair<string, PdfItem> GetFontResourceItem(string familyName, PdfDictionary defaultFormResources)
+        {
+            familyName = familyName.TrimStart('/');
+            var fontList = defaultFormResources.Elements.GetDictionary(PdfResources.Keys.Font);
+
+            var font = fontList.Elements.FirstOrDefault(e => e.Key.TrimStart('/') == familyName ||
+                                                        fontList.Elements.GetDictionary(e.Key).Elements.GetName(PdfFont.Keys.BaseFont).TrimStart('/') ==
+                                                        familyName);
+
+            return font;
+        }
+
 
         string IContentStream.GetFontName(XFont font, out PdfFont pdfFont)
         {
-            return GetFontName(font, out pdfFont);
+            pdfFont = GetFont(font);
+
+            return font.Name;
         }
 
         /// <summary>

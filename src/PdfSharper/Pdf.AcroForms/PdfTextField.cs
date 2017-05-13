@@ -202,6 +202,21 @@ namespace PdfSharper.Pdf.AcroForms
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the field allows rich text.
+        /// </summary>
+        public bool RichText
+        {
+            get { return (FieldFlags & PdfAcroFieldFlags.RichText) != 0; }
+            set
+            {
+                if (value)
+                    SetFlags |= PdfAcroFieldFlags.RichText;
+                else
+                    SetFlags &= ~PdfAcroFieldFlags.RichText;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether this field is used for passwords.
         /// </summary>
         public bool Password
@@ -367,102 +382,30 @@ namespace PdfSharper.Pdf.AcroForms
                 XForm form = new XForm(_document, xrect.Size);
                 XGraphics gfx = XGraphics.FromForm(form);
 
+
                 if (BackColor != XColor.Empty)
                     gfx.DrawRectangle(new XSolidBrush(BackColor), xrect);
                 // Draw Border
                 if (!BorderColor.IsEmpty)
                     gfx.DrawRectangle(new XPen(BorderColor), xrect);
 
-                if (Text.Length > 0)
-                {
-                    xrect = ApplyMarginsToXRectangle(xrect);
 
-                    if ((FieldFlags & PdfAcroFieldFlags.Comb) != 0 && MaxLength > 0)
-                    {
-                        var combWidth = xrect.Width / MaxLength;
-                        var format = XStringFormats.TopLeft;
-                        format.Comb = true;
-                        format.CombWidth = combWidth;
-                        gfx.Save();
-                        gfx.IntersectClip(xrect);
+                xrect = ApplyMarginsToXRectangle(xrect);
 
-                        if (MultiLine)
-                        {
-                            XTextFormatter formatter = new XTextFormatter(gfx);
-                            formatter.DrawString(Text, MultiLine, Font, new XSolidBrush(ForeColor), xrect, Alignment);
-                        }
-                        else
-                        {
-                            gfx.DrawString(Text, Font, new XSolidBrush(ForeColor), xrect + new XPoint(0, 1.5), format);
-                        }
-
-                        gfx.Restore();
-                    }
-                    else
-                    {
-                        XTextFormatter formatter = new XTextFormatter(gfx);
-                        formatter.DrawString(Text, MultiLine, Font, new XSolidBrush(ForeColor), xrect, Alignment);
-                    }
-                }
+                XTextFormatter formatter = new XTextFormatter(gfx);
+                formatter.DrawString(Text, MultiLine, FieldFlags.HasFlag(PdfAcroFieldFlags.Comb), MaxLength, Font, new XSolidBrush(ForeColor), xrect, Alignment);
 
                 form.DrawingFinished();
-                form.PdfForm.Elements.Add("/FormType", new PdfLiteral("1"));
+                AssignAppearanceStream(form);
 
-                // Get existing or create new appearance dictionary.
-                PdfDictionary ap = Elements[PdfAnnotation.Keys.AP] as PdfDictionary;
-                if (ap == null)
+                if (Page.Orientation == PageOrientation.Landscape)
                 {
-                    ap = new PdfDictionary(_document);
-                    ap.IsCompact = IsCompact;
-                    Elements[PdfAnnotation.Keys.AP] = ap;
-                }
+                    var normalStateDict = Elements.GetDictionary(Keys.AP).Elements.GetDictionary("/N");
+                    PdfArray matrixArray = GetLandscapeAppearanceMatrix(xrect);
+                    normalStateDict.Elements.SetObject("/Matrix", matrixArray);
 
-                PdfReference normalStateAppearanceReference = ap.Elements.GetReference("/N");
-                if (normalStateAppearanceReference == null || _document._trailers.Count > 1) //incremental update mode, must create a new stream
-                {
-                    // Set XRef to normal state
-                    ap.Elements["/N"] = form.PdfForm;
-
-
-                    var normalStateDict = ap.Elements.GetDictionary("/N");
-                    var resourceDict = new PdfDictionary(Owner);
-                    resourceDict.IsCompact = IsCompact;
-                    resourceDict.Elements[PdfResources.Keys.ProcSet] = new PdfArray(Owner, new PdfName("/PDF"), new PdfName("/Text"));
-
-                    var defaultFormResources = Owner.AcroForm.Elements.GetDictionary(PdfAcroForm.Keys.DR);
-                    if (defaultFormResources != null && defaultFormResources.Elements.ContainsKey(PdfResources.Keys.Font))
-                    {
-                        var fontResourceItem = XForm.GetFontResourceItem(Font.FamilyName, defaultFormResources);
-                        PdfDictionary fontDict = new PdfDictionary(Owner);
-                        fontDict.IsCompact = IsCompact;
-                        resourceDict.Elements[PdfResources.Keys.Font] = fontDict;
-                        fontDict.Elements[fontResourceItem.Key] = fontResourceItem.Value;
-                    }
-
-                    normalStateDict.Elements.SetObject(PdfPage.Keys.Resources, resourceDict);
-
-                    if (Page.Orientation == PageOrientation.Landscape)
-                    {
-                        PdfArray matrixArray = GetLandscapeAppearanceMatrix(xrect);
-                        normalStateDict.Elements.SetObject("/Matrix", matrixArray);
-
-                        PdfRectangle rotatedBox = GetLandscapeAppearanceBBox(xrect);
-                        normalStateDict.Elements.SetRectangle("/BBox", rotatedBox);
-                    }
-                }
-
-                PdfFormXObject xobj = form.PdfForm;
-                if (xobj.Stream == null)
-                    xobj.CreateStream(new byte[] { });
-
-                string s = xobj.Stream.ToString();
-                if (!string.IsNullOrEmpty(s))
-                {
-                    ap.Elements.GetDictionary("/N").Stream.Value = new RawEncoding().GetBytes(s);
-                }
-                else
-                {
-                    Elements.Remove(PdfAnnotation.Keys.AP);
+                    PdfRectangle rotatedBox = GetLandscapeAppearanceBBox(xrect);
+                    normalStateDict.Elements.SetRectangle("/BBox", rotatedBox);
                 }
             }
 #endif
@@ -494,7 +437,7 @@ namespace PdfSharper.Pdf.AcroForms
         {
             XRect xrect;
 
-            if(Page.Orientation == PageOrientation.Landscape)
+            if (Page.Orientation == PageOrientation.Landscape)
             {
                 xrect = new XRect(0, 0, rect.Height, rect.Width);
             }
@@ -508,7 +451,7 @@ namespace PdfSharper.Pdf.AcroForms
             return xrect;
         }
 
-        private XRect ApplyMarginsToXRectangle(XRect xrect)
+        public XRect ApplyMarginsToXRectangle(XRect xrect)
         {
             if (xrect != null)
             {
