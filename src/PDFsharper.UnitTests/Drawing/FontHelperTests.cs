@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PdfSharper.Drawing;
 using PdfSharper.Pdf;
+using PdfSharper.Pdf.AcroForms;
 using System;
 
 namespace PDFsharper.UnitTests.Drawing
@@ -375,7 +376,11 @@ namespace PDFsharper.UnitTests.Drawing
         [TestMethod]
         public void GetFontResourceItem_AddCour()
         {
-              PdfDocument doc = new PdfDocument();
+            PdfDocument doc = new PdfDocument();
+            doc.Catalog.AcroForm = new PdfAcroForm(doc);
+            PdfDictionary formDict = new PdfDictionary(doc);
+            formDict.Elements.SetObject("/Font", new PdfDictionary(doc));
+            doc.AcroForm.Elements.SetObject("/DR", formDict);
             //PdfDocument doc = PdfSharper.Pdf.IO.PdfReader.Open(@"c:\dev\pex\main\source\forms\af8digital.pdf");
 
             XFont font = new XFont("Courier", 10);
