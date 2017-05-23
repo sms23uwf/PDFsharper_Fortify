@@ -29,6 +29,7 @@
 
 using System;
 using PdfSharper.Drawing;
+using System.Linq;
 
 namespace PdfSharper.Pdf.Annotations
 {
@@ -190,7 +191,7 @@ namespace PdfSharper.Pdf.Annotations
 
         public override void FlagAsDirty()
         {
-            if (IsDirty || _document._trailers.Count == 1)
+            if (IsDirty || _document._trailers.All(t => t.IsReadOnly == false))
             {
                 return;
             }
