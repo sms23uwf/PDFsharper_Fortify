@@ -1805,8 +1805,6 @@ namespace PdfSharper.Drawing.Pdf
                 if (_streamMode == StreamMode.Text)
                 {
                     _content.Append("ET\n");
-                    while (_gfxStateStack.Count != 0)
-                        RestoreState();
                     _content.Append("EMC\n");
                 }
 
